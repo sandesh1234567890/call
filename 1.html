@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Voice Search</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Use a nice font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 3. Load Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the microphone button */
+        .mic-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.7;
+            transform: scale(0.8);
+            z-index: -1;
+            transition: all 0.3s ease-out;
+        }
+        .mic-button.is-listening::before {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+            70% {
+                transform: scale(1.6);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+        }
+        /* Custom styles from the design */
+        .nav-link {
+            @apply relative text-gray-700 font-medium hover:text-blue-600 after:content-[''] after:absolute after:left-0 after:bottom-[-4px] after:w-0 after:h-[2px] after:bg-blue-600 after:transition-all after:duration-300;
+        }
+        .nav-link.active, .nav-link:hover {
+             @apply text-blue-600;
+        }
+        .nav-link:hover::after, .nav-link.active::after {
+            @apply w-full;
+        }
+        /* Removed the .hero-section style, as it's now handled by Tailwind classes */
+    </style>
+</head>
+<body class="bg-white h-full">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 md:px-8 py-5 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">Cara</h1>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#" class="nav-link active">Home</a>
+                <a href="#" class="nav-link">Shop</a>
+                <a href="#" class="nav-link">Blog</a>
+                <a href="#" class="nav-link">About</a>
+                <a href="#" class="nav-link">Contact</a>
+            </nav>
+            <button class="md:hidden">
+                <i class="fas fa-bars text-2xl text-gray-700"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-[#f0f8ff] h-[70vh] md:h-[90vh] flex items-center px-4 md:px-16 relative overflow-hidden">
+        <div class="flex-1 z-10">
+            <h4 class="text-xl font-medium text-gray-700 mb-2">Trade-in-offer</h4>
+            <h2 class="text-4xl md:text-6xl font-bold text-gray-900 mb-3">Super value deals</h2>
+            <h1 class="text-4xl md:text-6xl font-bold text-teal-600 mb-4">On all products</h1>
+            <p class="text-gray-600 mb-6">Save more with coupons & up to 70% off!</p>
+            <button class="bg-blue-600 text-white font-medium py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                Shop Now
+            </button>
+        </div>
+        <div class="hidden md:block absolute right-0 bottom-0 h-full w-1/2">
+            <!-- The model image from the screenshot -->
+            <img src="hero4.png" alt="Model" class="h-full w-full object-cover object-center">
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Featured Products Title -->
+        <div class="text-center my-12">
+            <h2 class="text-4xl font-bold text-gray-900">Featured Products</h2>
+            <p class="text-gray-600 mt-2">Summer Collection New Modern Design</p>
+        </div>
+
+        <!-- Status Message Area -->
+        <div id="status-message" class="text-center text-lg text-gray-700 h-8 mb-6 transition-all duration-300">
+            Click the mic and try "Show me red shirts"
+        </div>
+
+        <!-- Product Grid -->
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            <!-- Products will be injected here by JavaScript -->
+        </div>
+
+        <!-- No Products Message -->
+        <div id="no-products-message" class="hidden text-center text-gray-500 my-12 py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No products found</h3>
+            <p class="mt-1 text-sm text-gray-500">Sorry, we couldn't find any products matching that description.</p>
+        </div>
+    </div>
+
+    <!-- Floating Action Button (Microphone) -->
+    <button id="mic-button" class="mic-button fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-5 shadow-2xl transition-all duration-200 transform hover:scale-110 z-50">
+        <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"></path>
+        </svg>
+    </button>
+
+    <!-- Product Card Template -->
+    <template id="product-card-template">
+        <div class="product-card bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transform hover:shadow-lg transition-shadow duration-300 cursor-pointer p-4">
+            <div class="bg-gray-100 rounded-lg mb-4">
+                <img class="product-image w-full h-48 md:h-64 object-cover rounded-lg" src="" alt="Product Image">
+            </div>
+            <span class="product-brand text-sm text-gray-500"></span>
+            <h3 class="product-name font-bold text-lg text-gray-800 my-1"></h3>
+            <div class="product-rating flex items-center text-yellow-400">
+                <!-- Stars will be injected here -->
+            </div>
+            <div class="flex justify-between items-center mt-2">
+                <p class="product-price text-lg font-bold text-blue-600"></p>
+                <button class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center hover:bg-blue-100 transition-colors">
+                    <i class="fas fa-shopping-cart"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // --- 1. MOCK DATABASE ---
+        // Updated with products based on user's uploads
+        const allProducts = [
+            // --- NEW PRODUCTS based on f1.jpg - f6.jpg ---
+            { id: 101, name: 'Abstract Floral Shirt', category: 'shirt', color: 'blue', brand: 'Cara', rating: 5, price: '$42.00', imgUrl: 'floral blue' },
+            { id: 102, name: 'Green Leaf Shirt', category: 'shirt', color: 'green', brand: 'adidas', rating: 4, price: '$38.00', imgUrl: 'f2.jpg' },
+            { id: 103, name: 'Beige Floral Shirt', category: 'shirt', color: 'gray', brand: 'Nike', rating: 4, price: '$40.00', imgUrl: 'f3.jpg' },
+            { id: 104, name: 'White Blossom Shirt', category: 'shirt', color: 'white', brand: 'Puma', rating: 5, price: '$35.00', imgUrl: 'f4.jpg' },
+            { id: 105, name: 'Navy Floral Shirt', category: 'shirt', color: 'blue', brand: 'Cara', rating: 5, price: '$45.00', imgUrl: 'f5.jpg' },
+            { id: 106, name: 'Corduroy Block Shirt', category: 'shirt', color: 'blue', brand: 'Levi\'s', rating: 5, price: '$68.00', imgUrl: 'f6.jpg' },
+            // --- Existing Products with more specific image URLs ---
+            { id: 1, name: 'Classic Tee', category: 'shirt', color: 'red', brand: 'adidas', rating: 4, price: '$25.00', imgUrl: 'RED.PNG' },
+            { id: 2, name: 'Casual Shirt', category: 'shirt', color: 'blue', brand: 'Nike', rating: 5, price: '$30.00', imgUrl: 'f2.jpg' },
+            { id: 3, name: 'Skinny Jeans', category: 'pants', color: 'blue', brand: 'Levi\'s', rating: 5, price: '$50.00', imgUrl: 'f3.jpg' },
+            { id: 4, name: 'Bomber Jacket', category: 'jacket', color: 'black', brand: 'Puma', rating: 4, price: '$75.00', imgUrl: 'f4.jpg' },
+            { id: 5, name: 'V-Neck Tee', category: 'shirt', color: 'white', brand: 'adidas', rating: 3, price: '$20.00', imgUrl: 'f5.jpg' },
+            { id: 6, name: 'Cargo Pants', category: 'pants', color: 'green', brand: 'Nike', rating: 4, price: '$45.00', imgUrl: 'f6.jpg' },
+            { id: 7, name: 'Leather Jacket', category: 'jacket', color: 'black', brand: 'Cara', rating: 5, price: '$150.00', imgUrl: 'f7.jpg' },
+            { id: 8, name: 'Polo Shirt', category: 'shirt', color: 'red', brand: 'polo', rating: 4, price: '$35.00', imgUrl: 'red2.png' },
+            { id: 9, name: 'Chino Pants', category: 'pants', color: 'black', brand: 'Levi\'s', rating: 4, price: '$55.00', imgUrl: 'https://loremflickr.com/400/400/black,chino,pants/all?lock=9' },
+            // --- ADDED DRESSES ---
+            { id: 11, name: 'Red Summer Dress', category: 'dress', color: 'red', brand: 'Cara', rating: 5, price: '$75.00', imgUrl: 'https://loremflickr.com/400/400/red,summer,dress/all?lock=11' },
+            { id: 12, name: 'Blue Evening Gown', category: 'dress', color: 'blue', brand: 'Nike', rating: 4, price: '$120.00', imgUrl: 'https://loremflickr.com/400/400/blue,evening,dress/all?lock=12' },
+            { id: 13, name: 'White Floral Dress', category: 'dress', color: 'white', brand: 'adidas', rating: 5, price: '$80.00', imgUrl: 'https://loremflickr.com/400/400/white,floral,dress/all?lock=13' },
+            { id: 14, name: 'Black Cocktail Dress', category: 'dress', color: 'black', brand: 'Puma', rating: 4, price: '$95.00', imgUrl: 'https://loremflickr.com/400/400/black,cocktail,dress/all?lock=14' },
+        ];
+
+        // --- 2. DOM ELEMENTS ---
+        const productGrid = document.getElementById('product-grid');
+        const cardTemplate = document.getElementById('product-card-template');
+        const micButton = document.getElementById('mic-button');
+        const statusMessage = document.getElementById('status-message');
+        const noProductsMessage = document.getElementById('no-products-message');
+
+        // --- 3. SPEECH RECOGNITION SETUP ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stop after one result
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            // Handle the voice result
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                statusMessage.textContent = `You said: "${transcript}"`;
+                processVoiceCommand(transcript);
+                // Scroll to the products section
+                document.getElementById('product-grid').scrollIntoView({ behavior: 'smooth' });
+            };
+
+            // Handle listening states
+            recognition.onstart = () => {
+                micButton.classList.add('is-listening');
+                statusMessage.textContent = 'Listening...';
+            };
+
+            recognition.onend = () => {
+                micButton.classList.remove('is-listening');
+                if (statusMessage.textContent === 'Listening...') {
+                    statusMessage.textContent = 'Click the mic and try again.';
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                statusMessage.textContent = 'Error: ' + event.error;
+            };
+
+            // Start recognition on button click
+            micButton.addEventListener('click', () => {
+                // Check if recognition is already running by checking our class
+                if (micButton.classList.contains('is-listening')) {
+                    // If it is listening, just ignore the click.
+                    console.log("Recognition is already active. Ignoring click.");
+                    return;
+                }
+                
+                try {
+                    recognition.start();
+                } catch (e) {
+                    // This catch is a fallback for other potential start errors
+                    console.error("Error starting recognition:", e);
+                    statusMessage.textContent = 'Error starting mic.';
+                }
+            });
+
+        } else {
+            // Speech Recognition not supported
+            statusMessage.textContent = "Voice search isn't supported in your browser.";
+            micButton.disabled = true;
+            micButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // --- 4. VOICE COMMAND PROCESSING ---
+        function processVoiceCommand(transcript) {
+            // Define keywords to look for
+            const colors = ['red', 'blue', 'green', 'black', 'white', 'gray'];
+            // Updated categories: removed 'shoes' and added 'dress'
+            const categories = ['shirt', 'pants', 'jacket', 'dress'];
+            const brands = ['adidas', 'nike', 'puma', 'levi\'s', 'cara']; // Added brands
+            
+            // Define plural versions to ignore them in name search
+            const categoryPlurals = ['shirts', 'pants', 'jackets', 'dresses'];
+            // Define common "stop words" to ignore
+            const stopWords = ['show', 'me', 'a', 'an', 'is', 'find', 'get', 'try', 'looking', 'for'];
+
+            let foundColor = null;
+            let foundCategory = null;
+            let foundBrand = null; // Added brand
+
+            // Check for a color
+            for (const color of colors) {
+                if (transcript.includes(color)) {
+                    foundColor = color;
+                    break;
+                }
+            }
+
+            // Check for a category
+            for (const category of categories) {
+                if (transcript.includes(category)) {
+                    // Handle 'shoe' vs 'shoes'
+                    foundCategory = category;
+                    break;
+                }
+            }
+
+            // Check for a brand
+            for (const brand of brands) {
+                if (transcript.includes(brand)) {
+                    foundBrand = brand;
+                    break;
+                }
+            }
+            
+            // Handle reset commands
+            if (transcript.includes('all') || transcript.includes('reset') || transcript.includes('show everything')) {
+                renderProducts(allProducts);
+                statusMessage.textContent = 'Showing all products';
+                return;
+            }
+
+            // Filter the products
+            let filteredProducts = allProducts;
+            
+            if (foundColor) {
+                filteredProducts = filteredProducts.filter(p => p.color === foundColor);
+            }
+            if (foundCategory) {
+                filteredProducts = filteredProducts.filter(p => p.category === foundCategory);
+            }
+            if (foundBrand) {
+                filteredProducts = filteredProducts.filter(p => p.brand.toLowerCase() === foundBrand);
+            }
+
+            // --- Filter by name ---
+            // 1. Get all words from the transcript.
+            // 2. Filter out words we already used or are common stop words.
+            const searchWords = transcript.split(' ').filter(word =>
+                word.length > 2 && // Ignore small words
+                !colors.includes(word) &&
+                !categories.includes(word) &&
+                !categoryPlurals.includes(word) &&
+                !brands.includes(word) && // Also filter out brands
+                !stopWords.includes(word)
+            );
+
+            // 3. If we have any search words left, use them to filter by product name
+            if (searchWords.length > 0) {
+                filteredProducts = filteredProducts.filter(product => {
+                    const productNameLower = product.name.toLowerCase();
+                    // Check if *all* remaining search words are in the product name
+                    return searchWords.every(word => productNameLower.includes(word));
+                });
+            }
+
+            renderProducts(filteredProducts);
+        }
+
+        // --- 5. PRODUCT RENDERING ---
+        function renderProducts(productsToRender) {
+            productGrid.innerHTML = ''; // Clear existing products
+
+            if (productsToRender.length === 0) {
+                noProductsMessage.classList.remove('hidden');
+            } else {
+                noProductsMessage.classList.add('hidden');
+            }
+
+            productsToRender.forEach(product => {
+                const card = cardTemplate.content.cloneNode(true);
+                
+                // Use the real image URL from our product data
+                card.querySelector('.product-image').src = product.imgUrl;
+                card.querySelector('.product-image').alt = product.name;
+                card.querySelector('.product-brand').textContent = product.brand;
+                card.querySelector('.product-name').textContent = product.name;
+                card.querySelector('.product-price').textContent = product.price;
+
+                // Add stars
+                const ratingContainer = card.querySelector('.product-rating');
+                let starsHtml = '';
+                for(let i = 0; i < 5; i++) {
+                    if(i < product.rating) {
+                        starsHtml += '<i class="fas fa-star"></i>';
+                    } else {
+                        starsHtml += '<i class="far fa-star"></i>'; // Use 'far' for empty star
+                    }
+                }
+                ratingContainer.innerHTML = starsHtml;
+                
+                productGrid.appendChild(card);
+            });
+        }
+
+        // --- 6. INITIALIZE ---
+        // Show all products on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts(allProducts);
+        });
+    </script>
+</body>
+</html>
